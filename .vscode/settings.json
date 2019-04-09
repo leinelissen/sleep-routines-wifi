@@ -1,0 +1,6 @@
+{
+    "terminal.integrated.env.osx": {
+        "PATH": "/Users/leinelissen/.platformio/penv/bin:/Users/leinelissen/.platformio/penv:/usr/local/opt/gnu-getopt/bin:/usr/local/opt/gnu-getopt/bin:/usr/local/opt/gnu-getopt/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/MacGPG2/bin:/opt/X11/bin",
+        "PLATFORMIO_CALLER": "vscode"
+    }
+}
