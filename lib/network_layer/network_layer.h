@@ -6,7 +6,6 @@
 #include <ArduinoJson.h>
 #include "esp_wpa2.h"
 #include "sleep_routine_events.h"
-#include "config.h"
 
 struct WiFiSettings {
     const char* username;

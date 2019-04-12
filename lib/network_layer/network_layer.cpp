@@ -9,9 +9,6 @@ WiFiClient net;
 MQTTClient *client;
 StaticJsonDocument<256> doc;
 
-// Set device id based on the WiFi mac address
-String deviceUuid;
-
 // A pointer to a suppled MQTT event handling function
 void (*mqttEventHandler)(const char*, JsonDocument&);
 
@@ -49,9 +46,6 @@ void connectWiFi(const char* identity, const char* password, const char* ssid) {
     Serial.println("WiFi connected");
     Serial.println("IP address set: ");
     Serial.println(WiFi.localIP()); //print LAN IP
-
-    // Set device UUID based on WiFi mac address
-    deviceUuid = WiFi.macAddress();
 }
 
 /**
@@ -116,10 +110,6 @@ MQTTClient * connectMQTT(const char* host, const char* username, const char* pas
 
     // If the connection is successful, connect to the appropriate MQTT channel;
     client->subscribe("/sleep-routines");
-
-    // Also post a message to signal connection
-    String payload = "{\"event\": \"" SR_EVENT_DEVICE_CONNECTED "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + deviceUuid + "\"}";
-    client->publish("/sleep-routines", payload);
 
     return client;
 }
