@@ -14,6 +14,7 @@ struct WiFiSettings {
 };
 
 void connectWiFi(const char*, const char*, const char*);
+void connectWiFi(const char*, const char*);
 void wiFiLoop();
 void messageReceived(String&, String&);
 MQTTClient * connectMQTT(const char*, const char*, const char*, void (*)(const char*, JsonDocument&));

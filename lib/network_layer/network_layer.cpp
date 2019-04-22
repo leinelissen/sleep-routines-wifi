@@ -15,22 +15,7 @@ void (*mqttEventHandler)(const char*, JsonDocument&);
 /**
  * Connect to the WiFi network
  */
-void connectWiFi(const char* identity, const char* password, const char* ssid) {
-    Serial.println();
-    Serial.print("Connecting to network: ");
-    Serial.println(ssid);
-    wifiSettings = { identity, password, ssid };
-
-    WiFi.disconnect(true);                                                             //disconnect form wifi to set new wifi connection
-    WiFi.mode(WIFI_STA);                                                               //init wifi mode
-    
-    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)identity, strlen(identity)); //provide identity
-    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)identity, strlen(identity)); //provide username --> identity and username is same
-    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)password, strlen(password)); //provide password
-    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                             //set config settings to default
-    esp_wifi_sta_wpa2_ent_enable(&config);                                             //set config settings to enable function
-    WiFi.begin(ssid);                                                                  //connect to wifi
-   
+void setupWiFi() {
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
@@ -47,6 +32,36 @@ void connectWiFi(const char* identity, const char* password, const char* ssid) {
     Serial.println("IP address set: ");
     Serial.println(WiFi.localIP()); //print LAN IP
 }
+
+void connectWiFi(const char* identity, const char* password, const char* ssid) { 
+    Serial.println();
+    Serial.print("Connecting to network: ");
+    Serial.println(ssid);
+    wifiSettings = { identity, password, ssid };    
+
+    WiFi.disconnect(true);                                                             //disconnect form wifi to set new wifi connection
+    WiFi.mode(WIFI_STA);                                                               //init wifi mode
+    
+    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)identity, strlen(identity)); //provide identity
+    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)identity, strlen(identity)); //provide username --> identity and username is same
+    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)password, strlen(password)); //provide password
+    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                             //set config settings to default
+    esp_wifi_sta_wpa2_ent_enable(&config);                                             //set config settings to enable function
+    WiFi.begin(ssid);        
+
+    setupWiFi();
+}
+
+void connectWiFi(const char* password, const char* ssid) {
+    Serial.println();
+    Serial.print("Connecting to network: ");
+    Serial.println(ssid);
+    wifiSettings = { nullptr, password, ssid };    
+
+    WiFi.begin(ssid, password);
+    setupWiFi();
+}
+
 
 /**
  * This starts a recurring task to monitor that WiFi is still working
@@ -97,7 +112,7 @@ void messageReceived(String &topic, String &payload) {
  */
 MQTTClient * connectMQTT(const char* host, const char* username, const char* password, void (*func)(const char*, JsonDocument&)) {
     // Create client and set message handler
-    client = new MQTTClient();
+    client = new MQTTClient(256);
     client->begin(host, net);
     client->onMessage(messageReceived);
     mqttEventHandler = func;
@@ -109,12 +124,13 @@ MQTTClient * connectMQTT(const char* host, const char* username, const char* pas
     }
 
     // If the connection is successful, connect to the appropriate MQTT channel;
-    client->subscribe("/sleep-routines");
+    client->subscribe("/sleep-routines", 1);
 
     return client;
 }
 
 void networkLayerLoop() {
     client->loop();
+    delay(10);
     wiFiLoop();
 }
