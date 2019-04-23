@@ -8,17 +8,18 @@
 #define HALL_SENSOR_PIN A4
 #define HALL_SENSOR_UPPER_BOUND 2000
 #define HALL_SENSOR_LOWER_BOUND 1700
-const int numberOfReadings = 10;
+const int numberOfReadings = 5;
 
 struct Sensor {
     int i = 0;
     int readings[numberOfReadings];
-    unsigned int total = 19650;
-    int average = 1965;
+    unsigned int total = 9650;
+    int average = 1930;
     bool active;
 };
 
 Sensor sensor;
+bool isDocked = false;
 
 // MQTT Server
 MQTTClient *mqtt_client;
@@ -62,7 +63,7 @@ void handleMQTTEvent(const char* event, JsonDocument &doc) {
 
             // Publish acknowledge message
             String payload = "{\"event\": \"updateIntervalAcknowledge\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\", \"sombreroId\":" + SOMBRERO_ID + "}";
-            mqtt_client->publish("/sleep-routines", payload);
+            mqtt_client->publish("/sleep-routines", payload, true, 1);
         }
     }
 }
@@ -91,7 +92,7 @@ void setup() {
     mqtt_client->publish("/sleep-routines", payload);
 
     for (int i = 0; i < numberOfReadings; i++) {
-        sensor.readings[i] = 1965;
+        sensor.readings[i] = sensor.average;
     }
 }
 
@@ -111,6 +112,9 @@ void sensorLoop() {
     sensor.i += 1;
 
     if (sensor.i >= numberOfReadings) {
+        Serial.print(sensor.average);
+        Serial.print("\t");
+        Serial.println(sensor.active);
         sensor.i = 0;
     }
 
@@ -122,4 +126,25 @@ void sensorLoop() {
 void loop() {
     networkLayerLoop();
     sensorLoop();
+
+    mqtt_client->publish("/sleep-routines", "{ \"event\": \"ping\" }");
+
+    // Check if we need to send out messages.
+    if (!isDocked && sensor.active) {
+        // If the sensor becomes active, change state
+        isDocked = true;
+
+        // Send MQTT message
+        Serial.println("isDocked changed, sending message...");
+        String payload = "{\"event\": \"" SR_EVENT_DEVICE_DETECTED_COUPLING "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\", \"interval\": " + interval + " }";
+        mqtt_client->publish("/sleep-routines", payload, false, 1);
+    } else if (isDocked && !sensor.active) {
+        // If the sensor becomes inactive, change state
+        isDocked = false;
+
+        // Send MQTT message
+        Serial.println("isDocked changed, sending message...");
+        String payload = "{\"event\": \"" SR_EVENT_DEVICE_DETECTED_DECOUPLING "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\"}";
+        mqtt_client->publish("/sleep-routines", payload, false, 1);
+    }
 }

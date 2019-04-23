@@ -34,8 +34,7 @@ void setupWiFi() {
 }
 
 void connectWiFi(const char* identity, const char* password, const char* ssid) { 
-    Serial.println();
-    Serial.print("Connecting to network: ");
+    Serial.print("Connecting to network (WPA2E): ");
     Serial.println(ssid);
     wifiSettings = { identity, password, ssid };    
 
@@ -47,14 +46,13 @@ void connectWiFi(const char* identity, const char* password, const char* ssid) {
     esp_wifi_sta_wpa2_ent_set_password((uint8_t *)password, strlen(password)); //provide password
     esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                             //set config settings to default
     esp_wifi_sta_wpa2_ent_enable(&config);                                             //set config settings to enable function
-    WiFi.begin(ssid);        
+    WiFi.begin(ssid);
 
     setupWiFi();
 }
 
 void connectWiFi(const char* password, const char* ssid) {
-    Serial.println();
-    Serial.print("Connecting to network: ");
+    Serial.print("Connecting to network (WPA2): ");
     Serial.println(ssid);
     wifiSettings = { nullptr, password, ssid };    
 
@@ -112,13 +110,15 @@ void messageReceived(String &topic, String &payload) {
  */
 MQTTClient * connectMQTT(const char* host, const char* username, const char* password, void (*func)(const char*, JsonDocument&)) {
     // Create client and set message handler
-    client = new MQTTClient(256);
+    client = new MQTTClient(512);
     client->begin(host, net);
     client->onMessage(messageReceived);
     mqttEventHandler = func;
 
     // Try and connect the client
-    while (!client->connect("arduino", username, password)) {
+    char clientId[17];
+    WiFi.macAddress().toCharArray(clientId, 17);
+    while (!client->connect(clientId, username, password)) {
         Serial.print(".");
         delay(1000);
     }
@@ -131,6 +131,5 @@ MQTTClient * connectMQTT(const char* host, const char* username, const char* pas
 
 void networkLayerLoop() {
     client->loop();
-    delay(10);
     wiFiLoop();
 }

@@ -9,9 +9,12 @@ MQTTClient *mqtt_client;
 
 // Hourglass
 #define SERVO_PIN 12
+#define TILT_PIN 14
 Hourglass hourglass;
 
 float batteryVoltage;
+bool tiltStatus = false;
+bool tiltRead = false;
 
 void handleMQTTEvent(const char* event, JsonDocument &doc) {
     // Log freshly received event
@@ -33,11 +36,16 @@ void setup() {
     Serial.begin(115200);
 
     // Connect to WiFi and MQTT
+#ifdef WIFI_IDENTITY
     connectWiFi(WIFI_IDENTITY, WIFI_PASSWORD, WIFI_SSID);
+#else
+    connectWiFi(WIFI_PASSWORD, WIFI_SSID);
+#endif    
+
     mqtt_client = connectMQTT(MQTT_HOST, MQTT_USER, MQTT_PASSWORD, handleMQTTEvent);
 
     // Also post a message to signal connection
-    String payload = "{\"event\": \"" SR_EVENT_DEVICE_CONNECTED "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress(); + "\"}";
+    String payload = "{\"event\": \"" SR_EVENT_DEVICE_CONNECTED "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\"}";
     mqtt_client->publish("/sleep-routines", payload);
 
     // Init hourglass class
@@ -49,9 +57,17 @@ void setup() {
     Serial.print("Battery voltage: ");
     Serial.println(batteryVoltage);
     Serial.println("Application initialised");
+
+    pinMode(TILT_PIN, INPUT);
 }
 
 void loop() {
     networkLayerLoop();
     hourglass.loop();
+
+    tiltRead = digitalRead(TILT_PIN);
+    if ((!tiltStatus && tiltRead) || (tiltStatus && !tiltRead)) {
+        Serial.println("Actor turned upside down");
+        tiltStatus = tiltRead;
+    }
 }
