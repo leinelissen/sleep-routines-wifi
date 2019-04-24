@@ -10,11 +10,13 @@ MQTTClient *mqtt_client;
 // Hourglass
 #define SERVO_PIN 12
 #define TILT_PIN 14
+#define TILT_MIN_COUNT 50
 Hourglass hourglass;
 
 float batteryVoltage;
 bool tiltStatus = false;
 bool tiltRead = false;
+int tiltCounter = 0;
 
 void handleMQTTEvent(const char* event, JsonDocument &doc) {
     // Log freshly received event
@@ -28,7 +30,6 @@ void handleMQTTEvent(const char* event, JsonDocument &doc) {
         hourglass.start(doc["interval"].as<unsigned int>());
     } else if (strcmp(event, SR_EVENT_DEVICE_DETECTED_DECOUPLING) == 0) {
         hourglass.stop();
-        mqtt_client->publish("/sleep-routines", "{}");
     }
 }
 
@@ -61,13 +62,33 @@ void setup() {
     pinMode(TILT_PIN, INPUT);
 }
 
+void sensorLoop() {
+    // Read tilt sensor
+    tiltRead = digitalRead(TILT_PIN);
+
+    if ((!tiltStatus && tiltRead) || (tiltStatus && !tiltRead)) {
+        // If the tiltStatus and counter don't match, increase the counter by
+        // one. This is done so that the event isn't invoked immediately.
+        tiltCounter += 1;
+    } else {
+        // If not, the tiltCounter starts from scratch
+        tiltCounter = 0;
+    }
+
+    // If a critical mass is reached, we change ht eactual value
+    if (tiltCounter > TILT_MIN_COUNT) {
+        // Set new variables
+        tiltStatus = tiltRead;
+        tiltCounter = 0;
+
+        // Send message
+        String payload = "{\"event\": \"" SR_EVENT_DEVICE_TILTED "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\", \"isUpright\":" + !tiltStatus + "\"}";
+        mqtt_client->publish("/sleep-routines", payload);
+    }
+}
+
 void loop() {
     networkLayerLoop();
     hourglass.loop();
-
-    tiltRead = digitalRead(TILT_PIN);
-    if ((!tiltStatus && tiltRead) || (tiltStatus && !tiltRead)) {
-        Serial.println("Actor turned upside down");
-        tiltStatus = tiltRead;
-    }
+    sensorLoop();
 }

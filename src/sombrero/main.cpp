@@ -127,8 +127,6 @@ void loop() {
     networkLayerLoop();
     sensorLoop();
 
-    mqtt_client->publish("/sleep-routines", "{ \"event\": \"ping\" }");
-
     // Check if we need to send out messages.
     if (!isDocked && sensor.active) {
         // If the sensor becomes active, change state

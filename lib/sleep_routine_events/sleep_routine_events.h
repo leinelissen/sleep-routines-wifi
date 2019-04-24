@@ -10,6 +10,7 @@
 #define SR_EVENT_TIMER_COMPLETED "timerCompleted"
 #define SR_EVENT_TIMER_STOPPED "timerStopped"
 #define SR_EVENT_UPDATE_INTERVAL "updateInterval"
+#define SR_EVENT_DEVICE_TILTED "deviceTilted"
 
 // Device Types
 #define SR_DEVICE_ACTOR "actor"
