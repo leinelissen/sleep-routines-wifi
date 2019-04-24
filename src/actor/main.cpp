@@ -14,7 +14,7 @@ MQTTClient *mqtt_client;
 Hourglass hourglass;
 
 float batteryVoltage;
-bool tiltStatus = false;
+bool isActorUpright = false;
 bool tiltRead = false;
 int tiltCounter = 0;
 
@@ -64,10 +64,10 @@ void setup() {
 
 void sensorLoop() {
     // Read tilt sensor
-    tiltRead = digitalRead(TILT_PIN);
+    tiltRead = !digitalRead(TILT_PIN);
 
-    if ((!tiltStatus && tiltRead) || (tiltStatus && !tiltRead)) {
-        // If the tiltStatus and counter don't match, increase the counter by
+    if ((!isActorUpright && tiltRead) || (isActorUpright && !tiltRead)) {
+        // If isActorUpright and tiltRead don't match, increase the counter by
         // one. This is done so that the event isn't invoked immediately.
         tiltCounter += 1;
     } else {
@@ -77,12 +77,19 @@ void sensorLoop() {
 
     // If a critical mass is reached, we change ht eactual value
     if (tiltCounter > TILT_MIN_COUNT) {
+        // Open and close hourglass accordingly
+        if (isActorUpright && !tiltRead) {
+            hourglass.start(1800000);
+        } else if (!isActorUpright && tiltRead) {
+            hourglass.stop();
+        }
+
         // Set new variables
-        tiltStatus = tiltRead;
+        isActorUpright = tiltRead;
         tiltCounter = 0;
 
         // Send message
-        String payload = "{\"event\": \"" SR_EVENT_DEVICE_TILTED "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\", \"isUpright\":" + !tiltStatus + "\"}";
+        String payload = "{\"event\": \"" SR_EVENT_DEVICE_TILTED "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\", \"isUpright\":" + isActorUpright + "}";
         mqtt_client->publish("/sleep-routines", payload);
     }
 }

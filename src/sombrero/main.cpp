@@ -78,19 +78,21 @@ void setup() {
     // Read the interval length from flash
     readInterval();
 
-    // Connect to WiFi and MQTT
+    // Connect to WiFi
 #ifdef WIFI_IDENTITY
     connectWiFi(WIFI_IDENTITY, WIFI_PASSWORD, WIFI_SSID);
 #else
     connectWiFi(WIFI_PASSWORD, WIFI_SSID);
 #endif
 
+    // Connect to MQTT
     mqtt_client = connectMQTT(MQTT_HOST, MQTT_USER, MQTT_PASSWORD, handleMQTTEvent);
 
     // Also post a message to signal connection
     String payload = "{\"event\": \"" SR_EVENT_DEVICE_CONNECTED "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\"}";
     mqtt_client->publish("/sleep-routines", payload);
 
+    // Seed the sensor readings so they don't immediately trigger
     for (int i = 0; i < numberOfReadings; i++) {
         sensor.readings[i] = sensor.average;
     }
@@ -112,14 +114,15 @@ void sensorLoop() {
     sensor.i += 1;
 
     if (sensor.i >= numberOfReadings) {
-        Serial.print(sensor.average);
-        Serial.print("\t");
-        Serial.println(sensor.active);
+        // Loop around if the iteration exceeds the proposed number of readings
         sensor.i = 0;
     }
 
-    sensor.active = sensor.average > HALL_SENSOR_UPPER_BOUND || sensor.average < HALL_SENSOR_LOWER_BOUND;
+    // Calculate whether the sensor is active or not
+    sensor.active = sensor.average > HALL_SENSOR_UPPER_BOUND 
+        || sensor.average < HALL_SENSOR_LOWER_BOUND;
 
+    // Delay for stability?
     delay(1);
 }
 
