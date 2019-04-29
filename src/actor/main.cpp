@@ -64,7 +64,7 @@ void setup() {
 
 void sensorLoop() {
     // Read tilt sensor
-    tiltRead = !digitalRead(TILT_PIN);
+    tiltRead = digitalRead(TILT_PIN);
 
     if ((!isActorUpright && tiltRead) || (isActorUpright && !tiltRead)) {
         // If isActorUpright and tiltRead don't match, increase the counter by

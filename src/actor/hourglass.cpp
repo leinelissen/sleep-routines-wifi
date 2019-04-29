@@ -13,7 +13,7 @@ void Hourglass::moveServo(bool open) {
     servo.attach(servoPin);
 
     // Set position according to start/stop
-    servo.write(open ? 30 : 120);
+    servo.write(open ? 100 : 120);
 
     // The servo will operate at about 0.14 - 0.20 s / 60 degrees, so a full 180 degree turn should take at most 0.6s
     delay(750);

@@ -116,6 +116,7 @@ void sensorLoop() {
     if (sensor.i >= numberOfReadings) {
         // Loop around if the iteration exceeds the proposed number of readings
         sensor.i = 0;
+        Serial.println(sensor.average);
     }
 
     // Calculate whether the sensor is active or not
