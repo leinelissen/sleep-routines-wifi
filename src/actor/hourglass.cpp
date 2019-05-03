@@ -13,12 +13,18 @@ void Hourglass::moveServo(bool open) {
     servo.attach(servoPin);
 
     // Set position according to start/stop
-    servo.write(open ? 100 : 120);
+    servo.write(open ? 120 : 135);
 
     // The servo will operate at about 0.14 - 0.20 s / 60 degrees, so a full 180 degree turn should take at most 0.6s
     delay(750);
 
-    // Detach the servo so that we don't supply any stall current and overheat the servo
+    if (!open) {
+        servo.write(140);
+        delay(50);
+    }
+
+    // Detach the servo so that we don't supply any stall current and overheat
+    // the servo
     servo.detach();
 
     // Switch flag
@@ -34,6 +40,12 @@ void Hourglass::start(unsigned int intv) {
     // Publish event
     sendEvent(SR_EVENT_STARTED_TIMER);
 
+    if (!hourglassIsOpen) {
+        moveServo(true);
+    }
+}
+
+void Hourglass::start() {
     if (!hourglassIsOpen) {
         moveServo(true);
     }

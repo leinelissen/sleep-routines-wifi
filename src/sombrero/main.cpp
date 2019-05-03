@@ -8,17 +8,18 @@
 #define HALL_SENSOR_PIN A4
 #define HALL_SENSOR_UPPER_BOUND 2000
 #define HALL_SENSOR_LOWER_BOUND 1700
-const int numberOfReadings = 5;
+#define HALL_SENSOR_NOMINAL_VALUE 1930
+const int numberOfReadings = 25;
 
 struct Sensor {
     int i = 0;
     int readings[numberOfReadings];
-    unsigned int total = 9650;
-    int average = 1930;
+    unsigned int total = HALL_SENSOR_NOMINAL_VALUE * numberOfReadings;
+    int average = HALL_SENSOR_NOMINAL_VALUE;
     bool active;
 };
 
-Sensor sensor;
+Sensor sensor; 
 bool isDocked = false;
 
 // MQTT Server
@@ -116,6 +117,7 @@ void sensorLoop() {
     if (sensor.i >= numberOfReadings) {
         // Loop around if the iteration exceeds the proposed number of readings
         sensor.i = 0;
+
         Serial.println(sensor.average);
     }
 
@@ -138,7 +140,7 @@ void loop() {
 
         // Send MQTT message
         Serial.println("isDocked changed, sending message...");
-        String payload = "{\"event\": \"" SR_EVENT_DEVICE_DETECTED_COUPLING "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\", \"interval\": " + interval + " }";
+        String payload = "{\"event\": \"" SR_EVENT_DEVICE_DETECTED_COUPLING "\", \"deviceType\": \"" SR_DEVICE_TYPE "\", \"deviceUuid\": \"" + WiFi.macAddress() + "\", \"interval\": " + interval + ", \"sombreroId\":" + SOMBRERO_ID + "}";
         mqtt_client->publish("/sleep-routines", payload, false, 1);
     } else if (isDocked && !sensor.active) {
         // If the sensor becomes inactive, change state

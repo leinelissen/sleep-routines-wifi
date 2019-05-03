@@ -7,6 +7,7 @@
 
 class Hourglass {
     public:
+        void start();
         void start(unsigned int);
         void stop(bool timerIsCompleted = false);
         void init(int, MQTTClient*);

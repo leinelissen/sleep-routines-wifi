@@ -10,13 +10,13 @@ MQTTClient *mqtt_client;
 // Hourglass
 #define SERVO_PIN 12
 #define TILT_PIN 14
-#define TILT_MIN_COUNT 50
+#define TILT_MIN_COUNT 50000
 Hourglass hourglass;
 
 float batteryVoltage;
 bool isActorUpright = false;
 bool tiltRead = false;
-int tiltCounter = 0;
+unsigned int tiltCounter = 0;
 
 void handleMQTTEvent(const char* event, JsonDocument &doc) {
     // Log freshly received event
@@ -25,9 +25,14 @@ void handleMQTTEvent(const char* event, JsonDocument &doc) {
 
     // Switch for the different event types
     if (strcmp(event, SR_EVENT_DEVICE_DETECTED_COUPLING) == 0) {
-        Serial.println("Received sombreroDidConnect event. Starting sequence...");
-        Serial.println(doc["interval"].as<unsigned int>());
-        hourglass.start(doc["interval"].as<unsigned int>());
+        if (doc["sombreroId"].as<unsigned int>()) {
+            Serial.println("Received last sombreroDidConnect event. Opening up definitively...");
+            hourglass.start();
+        } else {
+            Serial.println("Received sombreroDidConnect event. Starting sequence...");
+            Serial.println(doc["interval"].as<unsigned int>());
+            hourglass.start(doc["interval"].as<unsigned int>());
+        }
     } else if (strcmp(event, SR_EVENT_DEVICE_DETECTED_DECOUPLING) == 0) {
         hourglass.stop();
     }

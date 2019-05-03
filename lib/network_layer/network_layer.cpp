@@ -7,7 +7,7 @@ int counter = 0;
 WiFiSettings wifiSettings;
 WiFiClient net;
 MQTTClient *client;
-StaticJsonDocument<256> doc;
+StaticJsonDocument<512> doc;
 
 // A pointer to a suppled MQTT event handling function
 void (*mqttEventHandler)(const char*, JsonDocument&);
@@ -65,9 +65,6 @@ void connectWiFi(const char* password, const char* ssid) {
  * This starts a recurring task to monitor that WiFi is still working
  */
 void wiFiLoop() {
-    // This apparently increases stability
-    delay(10);
-
     if (WiFi.status() == WL_CONNECTED) {
         counter = 0;
     } else if (WiFi.status() != WL_CONNECTED) { 
@@ -83,8 +80,6 @@ void wiFiLoop() {
             ESP.restart();
         }
     }
-
-    delay(100);
 }
 
 /**
