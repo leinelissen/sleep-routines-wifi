@@ -64,7 +64,11 @@ void setup() {
     Serial.println(batteryVoltage);
     Serial.println("Application initialised");
 
+    // Initialise tilt sensor
     pinMode(TILT_PIN, INPUT);
+    // We set the actor status to the inverse of the sensor, so that we can
+    // reliably trigger the tilt event for the sensor loop
+    isActorUpright = !tiltRead;
 }
 
 void sensorLoop() {
@@ -80,11 +84,11 @@ void sensorLoop() {
         tiltCounter = 0;
     }
 
-    // If a critical mass is reached, we change ht eactual value
+    // If a critical mass is reached, we change the actual value
     if (tiltCounter > TILT_MIN_COUNT) {
         // Open and close hourglass accordingly
         if (isActorUpright && !tiltRead) {
-            hourglass.start(1800000);
+            hourglass.start();
         } else if (!isActorUpright && tiltRead) {
             hourglass.stop();
         }
